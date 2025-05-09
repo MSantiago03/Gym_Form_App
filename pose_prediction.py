@@ -158,7 +158,13 @@ def main():
     # Pushup training videos with labels
     pushup_videos = [
         ("Videos/Push_Up/good_push_up.mp4", 1),
+        ("Videos/Push_Up/front_push_up.mp4", 1),
+        ("Videos/Push_Up/good_push_up_2.mp4", 1),
+        ("Videos/Push_Up/good_push_up_3.mp4", 1),
         ("Videos/Push_Up/bad_push_up.mp4", 0),
+        ("Videos/Push_Up/bad_push_up_2.mp4", 0),
+        ("Videos/Push_Up/bad_push_up_3.mp4", 0),
+
     ]
 
     # Collect training data from both
