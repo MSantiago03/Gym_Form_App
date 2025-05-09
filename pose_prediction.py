@@ -2,113 +2,120 @@ import mediapipe as mp
 import numpy as np
 import cv2
 import torch
-import torchvision.transforms as transforms
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
+from typing import List, Tuple
 
-
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-from PIL import Image
-
+# Device config
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("************")
 print(device)
 
 SEQUENCE_LENGTH = 30
-pose_sequences = []
-labels = []  # Use this for supervised training (0 = bad, 1 = good)
+LABEL_GOOD_FORM = 1  # Use 0 for bad form when collecting data
 
+# -------------------------------
+# MODEL
+# -------------------------------
+class FormRNN(nn.Module):
+    def __init__(self, input_size: int = 99, hidden_size: int = 64, num_layers: int = 1, num_classes: int = 2) -> None:
+        super(FormRNN, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.classifier = nn.Linear(hidden_size, num_classes)
 
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        _, (hn, _) = self.lstm(x)
+        return self.classifier(hn[-1])
 
+# -------------------------------
+# DATA COLLECTION
+# -------------------------------
+def extract_normalized_keypoints(results) -> np.ndarray:
+    """Extract normalized (x, y, z) keypoints from MediaPipe results."""
+    keypoints = [
+        [lm.x, lm.y, lm.z]
+        for lm in results.pose_landmarks.landmark
+    ]
+    return np.array(keypoints).flatten()  # Shape: (99,)
 
-def calculate_angle(a, b, c):
-    """
-    Calculates the angle at point b given points a, b, and c.
-    """
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
+def collect_pose_sequences_from_video(video_path: str, sequence_length: int = SEQUENCE_LENGTH, label: int = LABEL_GOOD_FORM) -> Tuple[List[np.ndarray], List[int]]:
+    mp_pose = mp.solutions.pose
+    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    mp_drawing = mp.solutions.drawing_utils
 
-    ba = a - b
-    bc = c - b
+    cap = cv2.VideoCapture(video_path)
+    pose_sequences, X_data, y_data = [], [], []
 
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-    angle = np.arccos(cosine_angle)
-    return np.degrees(angle)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-
-
-# Define transformations for image preprocessing
-preprocess = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
-
-# move the input and model to GPU for speed if available
-if torch.cuda.is_available():
-    input_batch = input_batch.to('cuda')
-    model.to('cuda')
-
-
-## initialize pose estimator
-mp_drawing = mp.solutions.drawing_utils
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-
-# Feed Video MP4
-cap = cv2.VideoCapture('/Users/manuelsantiago/Library/CloudStorage/OneDrive-BowdoinCollege/Desktop/DeepLearning/Final_Project/Gym_Form_App/Videos/jack_demo.mp4')
-
-while cap.isOpened():
-    # read frame
-    _, frame = cap.read()
-    try:
-        # resize the frame for portrait video
         frame = cv2.resize(frame, (350, 600))
-        # convert to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # process the frame for pose detection
-        pose_results = pose.process(frame_rgb)
-        # print("##### Printing Landmarks Below #####")
-        # print(pose_results.pose_landmarks)
+        results = pose.process(frame_rgb)
 
-        if pose_results.pose_landmarks:
-            landmarks = []
-            h, w, _ = frame.shape  # image dimensions
+        if results.pose_landmarks:
+            frame_vector = extract_normalized_keypoints(results)
+            pose_sequences.append(frame_vector)
 
-            for landmark in pose_results.pose_landmarks.landmark:
-                x_px = landmark.x * w
-                y_px = landmark.y * h
-                z = landmark.z  # z is still relative (can be left as is)
-                landmarks.append([x_px, y_px, z])
+            if len(pose_sequences) == sequence_length:
+                sample = np.array(pose_sequences)
+                X_data.append(sample)
+                y_data.append(label)
+                pose_sequences = []  # Reset
 
-            landmarks_array = np.array(landmarks)
+            mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-            shoulder = landmarks_array[11]  # LEFT SHOULDER
-            elbow = landmarks_array[13]     # LEFT ELBOW
-            waist = landmarks_array[23]
+        cv2.imshow('Pose Capture', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-            distance = np.linalg.norm(shoulder - elbow)
-            angle = calculate_angle(elbow, shoulder, waist)
+    cap.release()
+    cv2.destroyAllWindows()
+    return X_data, y_data
 
-            print(f"Distance between shoulder and elbow: {distance} pixels")
-            print(f"Angle between shoulder and elbow: {angle} degrees")
+# -------------------------------
+# TRAINING
+# -------------------------------
+def train_rnn_model(X: np.ndarray, y: np.ndarray, epochs: int = 10, batch_size: int = 8, lr: float = 1e-3) -> FormRNN:
+    model = FormRNN().to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
 
-            print(landmarks_array.shape)  # Should be (33, 3) -> 33 landmarks, x, y, z each
-            # print(landmarks_array)  # Shows all landmarks - landmarks stores landmark coords
-        
-        # draw skeleton on the frame
-        mp_drawing.draw_landmarks(frame, pose_results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-        # display the frame
-        cv2.imshow('Output', frame)
-    except:
-        break
-        
-    if cv2.waitKey(1) == ord('q'):
-        break
+    tensor_x = torch.tensor(X, dtype=torch.float32).to(device)
+    tensor_y = torch.tensor(y, dtype=torch.long).to(device)
+    dataset = TensorDataset(tensor_x, tensor_y)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-cap.release()
-cv2.destroyAllWindows()
+    for epoch in range(epochs):
+        model.train()
+        total_loss = 0.0
+        for xb, yb in loader:
+            optimizer.zero_grad()
+            preds = model(xb)
+            loss = criterion(preds, yb)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        print(f"Epoch {epoch+1}: Loss = {total_loss:.4f}")
 
+    return model
+
+# -------------------------------
+# MAIN PIPELINE
+# -------------------------------
+def main(video_path: str):
+    X_data, y_data = collect_pose_sequences_from_video(video_path)
+    np.save("X_data.npy", np.array(X_data))
+    np.save("y_data.npy", np.array(y_data))
+
+    model = train_rnn_model(np.array(X_data), np.array(y_data))
+    torch.save(model.state_dict(), "form_rnn.pth")
+
+if __name__ == "__main__":
+    main("/path/to/your/video.mp4")  # Replace with your video path
 
 
 
