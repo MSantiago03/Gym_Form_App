@@ -51,9 +51,8 @@ def collect_pose_sequences_from_video(video_path: str, sequence_length: int = SE
         if not ret:
             break
 
-        # frame = cv2.resize(frame, (350, 600))
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = pose.process(frame_rgb)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = pose.process(frame)
 
         if results.pose_landmarks:
             frame_vector = extract_normalized_keypoints(results)
@@ -103,20 +102,61 @@ def train_rnn_model(X: np.ndarray, y: np.ndarray, epochs: int = 10, batch_size: 
     return model
 
 # -------------------------------
+# EVALUATION
+# -------------------------------
+def evaluate_video(video_path: str, model_path: str, label_map: dict = {0: "Bad Form", 1: "Good Form"}) -> None:
+    model = FormRNN()
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+    model.to(device)
+
+    mp_pose = mp.solutions.pose
+    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    mp_drawing = mp.solutions.drawing_utils
+
+    cap = cv2.VideoCapture(video_path)
+    pose_sequence = []
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = pose.process(frame_rgb)
+
+        if results.pose_landmarks:
+            keypoints = extract_normalized_keypoints(results)
+            pose_sequence.append(keypoints)
+
+            if len(pose_sequence) == SEQUENCE_LENGTH:
+                sequence_tensor = torch.tensor([pose_sequence], dtype=torch.float32).to(device)
+                with torch.no_grad():
+                    output = model(sequence_tensor)
+                    prediction = torch.argmax(output, dim=1).item()
+                    label = label_map[prediction]
+
+                cv2.putText(frame, f"{label}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX,
+                            1.5, (0, 255, 0) if prediction == 1 else (0, 0, 255), 3)
+                pose_sequence = []
+
+            mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
+        cv2.imshow('Evaluation', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+# -------------------------------
 # MAIN PIPELINE
 # -------------------------------
 def main():
     # Train for multiple exercises separately
-    # exercises = {
-    #     "squat_good": ("/path/to/squat_good.mp4", 1),
-    #     "squat_bad": ("/path/to/squat_bad.mp4", 0),
-    #     "pushup_good": ("/path/to/pushup_good.mp4", 1),
-    #     "pushup_bad": ("/path/to/pushup_bad.mp4", 0),
-    # }
-
     exercises = {
-        "pushup_good": ("Videos/Push_Up/IMG_3158.mp4", 1),
-        "pushup_bad": ("Videos/Push_Up/IMG_3160.mp4", 0),
+        "pushup_good": ("Videos/Push_Up/good_push_up.mp4", 1),
+        "pushup_bad": ("Videos/Push_Up/bad_push_up.mp4", 0),
     }
 
     for name, (video_path, label) in exercises.items():
@@ -128,6 +168,14 @@ def main():
         model = train_rnn_model(np.array(X_data), np.array(y_data))
         torch.save(model.state_dict(), f"form_rnn_{name}.pth")
 
+    # Evaluation example
+    # Provide the path to evaluation video and the corresponding model
+    eval_model_path = "form_rnn_pushup_good.pth"  # change this as needed
+    eval_video_path = "Videos/Push_Up/test_good_push_up.mp4"  # change this as needed
+    evaluate_video(eval_video_path, eval_model_path)
+    eval_video_path_2 = "Videos/Push_Up/squat_test.mp4"
+    evaluate_video(eval_video_path_2, eval_model_path)
+
 if __name__ == "__main__":
     main()
 
@@ -137,7 +185,6 @@ if __name__ == "__main__":
 # Elbows:L - 13, R - 14
 # Wrists: L - 15, R - 16
 # Waist: L - 23, R - 24
-
 
 
 # # LIVE FEED VERSION
