@@ -118,7 +118,6 @@ if __name__ == "__main__":
     main("/path/to/your/video.mp4")  # Replace with your video path
 
 
-
 # Important Landmarks:
 # Shoulders: L - 11, R - 12
 # Elbows:L - 13, R - 14
