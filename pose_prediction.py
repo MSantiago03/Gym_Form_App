@@ -13,10 +13,9 @@ print("************")
 print(device)
 
 SEQUENCE_LENGTH = 30
-LABEL_GOOD_FORM = 1  # Use 0 for bad form when collecting data
 
 # -------------------------------
-# MODEL
+# MODEL (Per-exercise)
 # -------------------------------
 class FormRNN(nn.Module):
     def __init__(self, input_size: int = 99, hidden_size: int = 64, num_layers: int = 1, num_classes: int = 2) -> None:
@@ -39,7 +38,7 @@ def extract_normalized_keypoints(results) -> np.ndarray:
     ]
     return np.array(keypoints).flatten()  # Shape: (99,)
 
-def collect_pose_sequences_from_video(video_path: str, sequence_length: int = SEQUENCE_LENGTH, label: int = LABEL_GOOD_FORM) -> Tuple[List[np.ndarray], List[int]]:
+def collect_pose_sequences_from_video(video_path: str, sequence_length: int = SEQUENCE_LENGTH, label: int = 1) -> Tuple[List[np.ndarray], List[int]]:
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
     mp_drawing = mp.solutions.drawing_utils
@@ -106,17 +105,26 @@ def train_rnn_model(X: np.ndarray, y: np.ndarray, epochs: int = 10, batch_size: 
 # -------------------------------
 # MAIN PIPELINE
 # -------------------------------
-def main(video_path: str):
-    X_data, y_data = collect_pose_sequences_from_video(video_path)
-    np.save("X_data.npy", np.array(X_data))
-    np.save("y_data.npy", np.array(y_data))
+def main():
+    # Train for multiple exercises separately
+    exercises = {
+        "squat_good": ("/path/to/squat_good.mp4", 1),
+        "squat_bad": ("/path/to/squat_bad.mp4", 0),
+        "pushup_good": ("/path/to/pushup_good.mp4", 1),
+        "pushup_bad": ("/path/to/pushup_bad.mp4", 0),
+    }
 
-    model = train_rnn_model(np.array(X_data), np.array(y_data))
-    torch.save(model.state_dict(), "form_rnn.pth")
+    for name, (video_path, label) in exercises.items():
+        print(f"Collecting data for {name}")
+        X_data, y_data = collect_pose_sequences_from_video(video_path, label=label)
+        np.save(f"X_data_{name}.npy", np.array(X_data))
+        np.save(f"y_data_{name}.npy", np.array(y_data))
+
+        model = train_rnn_model(np.array(X_data), np.array(y_data))
+        torch.save(model.state_dict(), f"form_rnn_{name}.pth")
 
 if __name__ == "__main__":
-    main("/path/to/your/video.mp4")  # Replace with your video path
-
+    main()
 
 # Important Landmarks:
 # Shoulders: L - 11, R - 12
