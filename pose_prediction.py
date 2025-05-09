@@ -51,7 +51,7 @@ def collect_pose_sequences_from_video(video_path: str, sequence_length: int = SE
         if not ret:
             break
 
-        frame = cv2.resize(frame, (350, 600))
+        # frame = cv2.resize(frame, (350, 600))
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = pose.process(frame_rgb)
 
@@ -107,11 +107,16 @@ def train_rnn_model(X: np.ndarray, y: np.ndarray, epochs: int = 10, batch_size: 
 # -------------------------------
 def main():
     # Train for multiple exercises separately
+    # exercises = {
+    #     "squat_good": ("/path/to/squat_good.mp4", 1),
+    #     "squat_bad": ("/path/to/squat_bad.mp4", 0),
+    #     "pushup_good": ("/path/to/pushup_good.mp4", 1),
+    #     "pushup_bad": ("/path/to/pushup_bad.mp4", 0),
+    # }
+
     exercises = {
-        "squat_good": ("/path/to/squat_good.mp4", 1),
-        "squat_bad": ("/path/to/squat_bad.mp4", 0),
-        "pushup_good": ("/path/to/pushup_good.mp4", 1),
-        "pushup_bad": ("/path/to/pushup_bad.mp4", 0),
+        "pushup_good": ("Videos/Push_Up/IMG_3158.mp4", 1),
+        "pushup_bad": ("Videos/Push_Up/IMG_3160.mp4", 0),
     }
 
     for name, (video_path, label) in exercises.items():
@@ -125,6 +130,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 # Important Landmarks:
 # Shoulders: L - 11, R - 12
