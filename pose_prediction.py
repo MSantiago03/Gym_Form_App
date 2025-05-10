@@ -134,7 +134,7 @@ def main():
     np.save("y_data_pushup.npy", np.array(y_total))
 
     # Train one model for pushup classification
-    model = train_rnn_model(np.array(X_total), np.array(y_total), epochs=11)
+    model = train_rnn_model(np.array(X_total), np.array(y_total))
     torch.save(model.state_dict(), "form_rnn_pushup.pth")
 
 if __name__ == "__main__":
