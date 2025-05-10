@@ -164,7 +164,6 @@ def main():
         ("Videos/Push_Up/bad_push_up.mp4", 0),
         ("Videos/Push_Up/bad_push_up_2.mp4", 0),
         ("Videos/Push_Up/bad_push_up_3.mp4", 0),
-
     ]
 
     # Collect training data from both
