@@ -53,8 +53,8 @@ def collect_pose_sequences_from_video(video_path: str, sequence_length: int = SE
         if not ret:
             break
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = pose.process(frame)
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = pose.process(frame_rgb)
 
         if results.pose_landmarks:
             frame_vector = extract_normalized_keypoints(results)
@@ -104,66 +104,22 @@ def train_rnn_model(X: np.ndarray, y: np.ndarray, epochs: int = 10, batch_size: 
     return model
 
 # -------------------------------
-# EVALUATION
-# -------------------------------
-def evaluate_video(video_path: str, model_path: str, label_map: dict = {0: "Bad Form", 1: "Good Form"}) -> None:
-    model = FormRNN()
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
-    model.to(device)
-
-    mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-    mp_drawing = mp.solutions.drawing_utils
-
-    cap = cv2.VideoCapture(video_path)
-    pose_sequence = []
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = pose.process(frame_rgb)
-
-        if results.pose_landmarks:
-            keypoints = extract_normalized_keypoints(results)
-            pose_sequence.append(keypoints)
-
-            if len(pose_sequence) == SEQUENCE_LENGTH:
-                sequence_tensor = torch.tensor([pose_sequence], dtype=torch.float32).to(device)
-                with torch.no_grad():
-                    output = model(sequence_tensor)
-                    prediction = torch.argmax(output, dim=1).item()
-                    label = label_map[prediction]
-
-                cv2.putText(frame, f"{label}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX,
-                            1.5, (0, 255, 0) if prediction == 1 else (0, 0, 255), 3)
-                pose_sequence = []
-
-            mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-
-        cv2.imshow('Evaluation', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-# -------------------------------
 # MAIN PIPELINE
 # -------------------------------
 def main():
     # Pushup training videos with labels
     pushup_videos = [
-        ("Videos/Push_Up/good_push_up.mp4", 1),
-        ("Videos/Push_Up/front_push_up.mp4", 1),
-        ("Videos/Push_Up/good_push_up_2.mp4", 1),
-        ("Videos/Push_Up/good_push_up_3.mp4", 1),
-        ("Videos/Push_Up/bad_push_up.mp4", 0),
-        ("Videos/Push_Up/bad_push_up_2.mp4", 0),
-        ("Videos/Push_Up/bad_push_up_3.mp4", 0),
+        ("Videos/Push_Up/good_push_ups/good_push_up_1.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_2.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_3.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_4.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_5.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_6.mp4", 1),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_1.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_2.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_3.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_4.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_5.mp4", 0)
     ]
 
     # Collect training data from both
@@ -178,13 +134,8 @@ def main():
     np.save("y_data_pushup.npy", np.array(y_total))
 
     # Train one model for pushup classification
-    model = train_rnn_model(np.array(X_total), np.array(y_total))
+    model = train_rnn_model(np.array(X_total), np.array(y_total), epochs=11)
     torch.save(model.state_dict(), "form_rnn_pushup.pth")
-
-    # Test it on new videos
-    print("\nEvaluating trained pushup model...\n")
-    evaluate_video("Videos/Push_Up/test_good_push_up.mp4", "form_rnn_pushup.pth")
-    evaluate_video("Videos/Push_Up/test_bad_push_up.mp4", "form_rnn_pushup.pth")
 
 if __name__ == "__main__":
     main()
