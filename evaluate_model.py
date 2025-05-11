@@ -108,6 +108,8 @@ if __name__ == "__main__":
     test_video_path = "Videos/Push_Up/test_push_up/test_bad_push_up_2.mp4"
     test_model_path = "form_rnn_pushup99.pth"
     evaluate_video(test_video_path, test_model_path)
+    test_video_path = "Videos/Push_Up/test_push_up/test_push_up_bad_3.mp4"
+    evaluate_video(test_video_path, test_model_path)
     test_video_path = "Videos/Push_Up/test_push_up/test_good_3.mp4"
     evaluate_video(test_video_path, test_model_path)
     test_video_path = "Videos/Push_Up/test_push_up/test_good_4.mp4"
