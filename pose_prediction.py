@@ -203,23 +203,23 @@ if __name__ == "__main__":
     bad_dir = "Videos/Push_Up/bad_push_ups"
     main(good_dir, bad_dir, use_gpu=True)
 
-    pushup_videos = [
-            ("Videos/Push_Up/good_push_ups/good_push_up_1.mp4", 1),
-            ("Videos/Push_Up/good_push_ups/good_push_up_2.mp4", 1),
-            ("Videos/Push_Up/good_push_ups/good_push_up_3.mp4", 1),
-            ("Videos/Push_Up/good_push_ups/good_push_up_5.mp4", 1),
-            ("Videos/Push_Up/good_push_ups/good_push_up_6.mp4", 1),
-            ("Videos/Push_Up/good_push_ups/good_push_up_7.mp4", 1),
-            ("Videos/Push_Up/good_push_ups/good_push_up_8.mp4", 1),
-            ("Videos/Push_Up/good_push_ups/good_push_up_9.mp4", 1),
-            ("Videos/Push_Up/bad_push_ups/bad_push_up_1.mp4", 0),
-            ("Videos/Push_Up/bad_push_ups/bad_push_up_2.mp4", 0),
-            ("Videos/Push_Up/bad_push_ups/bad_push_up_3.mp4", 0),
-            ("Videos/Push_Up/bad_push_ups/bad_push_up_4.mp4", 0),
-            ("Videos/Push_Up/bad_push_ups/bad_push_up_5.mp4", 0),
-            ("Videos/Push_Up/bad_push_ups/bad_push_up_6.mp4", 0),
-            ("Videos/Push_Up/bad_push_ups/bad_push_up_7.mp4", 0)
-        ]
+pushup_videos = [
+        ("Videos/Push_Up/good_push_ups/good_push_up_1.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_2.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_3.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_5.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_6.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_7.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_8.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_9.mp4", 1),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_1.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_2.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_3.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_4.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_5.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_6.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_7.mp4", 0)
+    ]
 # import mediapipe as mp
 # import numpy as np
 # import cv2
