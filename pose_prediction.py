@@ -148,7 +148,7 @@ def train_rnn_model(X: np.ndarray, y: np.ndarray, device: torch.device, epochs: 
     plt.title("Training Accuracy")
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     return model
 
@@ -195,7 +195,9 @@ def main(good_dir: str, bad_dir: str, use_gpu: bool = True):
     np.save("y_data_pushup.npy", np.array(y_total))
 
     model = train_rnn_model(np.array(X_total), np.array(y_total), device)
-    torch.save(model.state_dict(), "form_rnn_pushup.pth")
+    print(f"📦 Saving model to: {os.path.abspath('form_rnn_pushup99.pth')}")
+    torch.save(model.state_dict(), "form_rnn_pushup99.pth")
+    print("✅ Training complete. Saving model...")
 
 if __name__ == "__main__":
     # Example usage without parser
@@ -207,19 +209,209 @@ pushup_videos = [
         ("Videos/Push_Up/good_push_ups/good_push_up_1.mp4", 1),
         ("Videos/Push_Up/good_push_ups/good_push_up_2.mp4", 1),
         ("Videos/Push_Up/good_push_ups/good_push_up_3.mp4", 1),
+        # ("Videos/Push_Up/good_push_ups/good_push_up_4.mp4", 1),
         ("Videos/Push_Up/good_push_ups/good_push_up_5.mp4", 1),
         ("Videos/Push_Up/good_push_ups/good_push_up_6.mp4", 1),
         ("Videos/Push_Up/good_push_ups/good_push_up_7.mp4", 1),
         ("Videos/Push_Up/good_push_ups/good_push_up_8.mp4", 1),
         ("Videos/Push_Up/good_push_ups/good_push_up_9.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_10.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_11.mp4", 1),
+        ("Videos/Push_Up/good_push_ups/good_push_up_12.mp4", 1),
         ("Videos/Push_Up/bad_push_ups/bad_push_up_1.mp4", 0),
         ("Videos/Push_Up/bad_push_ups/bad_push_up_2.mp4", 0),
         ("Videos/Push_Up/bad_push_ups/bad_push_up_3.mp4", 0),
         ("Videos/Push_Up/bad_push_ups/bad_push_up_4.mp4", 0),
         ("Videos/Push_Up/bad_push_ups/bad_push_up_5.mp4", 0),
         ("Videos/Push_Up/bad_push_ups/bad_push_up_6.mp4", 0),
-        ("Videos/Push_Up/bad_push_ups/bad_push_up_7.mp4", 0)
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_7.mp4", 0),
+        ("Videos/Push_Up/bad_push_ups/bad_push_up_8.mp4", 0)
     ]
+
+
+
+# import mediapipe as mp
+# import numpy as np
+# import cv2
+# import torch
+# import torch.nn as nn
+# import torch.optim as optim
+# from torch.utils.data import TensorDataset, DataLoader
+# from typing import List, Tuple
+# import os
+# import matplotlib.pyplot as plt
+
+# # -------------------------------
+# # DEVICE CONFIGURATION
+# # -------------------------------
+# def get_device(use_gpu: bool = True) -> torch.device:
+#     if use_gpu and torch.cuda.is_available():
+#         print("✅ Using GPU (CUDA)")
+#         return torch.device("cuda")
+#     else:
+#         print("⚠️ Using CPU")
+#         return torch.device("cpu")
+
+# # -------------------------------
+# # MODEL DEFINITION
+# # -------------------------------
+# class FormRNN(nn.Module):
+#     def __init__(self, input_size: int = 6, hidden_size: int = 64, num_layers: int = 1, num_classes: int = 2) -> None:
+#         super(FormRNN, self).__init__()
+#         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+#         self.dropout = nn.Dropout(0.3)
+#         self.classifier = nn.Linear(hidden_size, num_classes)
+
+#     def forward(self, x: torch.Tensor) -> torch.Tensor:
+#         _, (hn, _) = self.lstm(x)
+#         out = self.dropout(hn[-1])
+#         return self.classifier(out)
+
+# # -------------------------------
+# # ANGLE-BASED FEATURE EXTRACTION
+# # -------------------------------
+# def get_angle(a, b, c):
+#     a = np.array(a)
+#     b = np.array(b)
+#     c = np.array(c)
+#     ba = a - b
+#     bc = c - b
+#     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-6)
+#     return np.degrees(np.arccos(np.clip(cosine_angle, -1.0, 1.0)))
+
+# def extract_form_features(results) -> np.ndarray:
+#     landmarks = results.pose_landmarks.landmark
+#     get_point = lambda i: [landmarks[i].x, landmarks[i].y, landmarks[i].z]
+
+#     left_elbow_angle = get_angle(get_point(11), get_point(13), get_point(15))
+#     right_elbow_angle = get_angle(get_point(12), get_point(14), get_point(16))
+#     left_knee_angle = get_angle(get_point(23), get_point(25), get_point(27))
+#     right_knee_angle = get_angle(get_point(24), get_point(26), get_point(28))
+#     back_alignment = get_angle(get_point(11), get_point(23), get_point(27))
+
+#     shoulder_y = (landmarks[11].y + landmarks[12].y) / 2
+#     wrist_y = (landmarks[15].y + landmarks[16].y) / 2
+#     shoulder_to_wrist_dist = abs(shoulder_y - wrist_y)
+
+#     return np.array([
+#         left_elbow_angle, right_elbow_angle,
+#         left_knee_angle, right_knee_angle,
+#         back_alignment, shoulder_to_wrist_dist
+#     ])
+
+# # -------------------------------
+# # DATA COLLECTION
+# # -------------------------------
+# SEQUENCE_LENGTH = 30
+
+# def collect_pose_sequences_from_video(video_path: str, sequence_length: int = SEQUENCE_LENGTH, label: int = 1) -> Tuple[List[np.ndarray], List[int]]:
+#     mp_pose = mp.solutions.pose
+#     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+#     cap = cv2.VideoCapture(video_path)
+#     pose_sequences, X_data, y_data = [], [], []
+
+#     while cap.isOpened():
+#         ret, frame = cap.read()
+#         if not ret:
+#             break
+
+#         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         results = pose.process(frame_rgb)
+
+#         if results.pose_landmarks:
+#             frame_vector = extract_form_features(results)
+#             pose_sequences.append(frame_vector)
+
+#             if len(pose_sequences) == sequence_length:
+#                 sample = np.array(pose_sequences)
+#                 X_data.append(sample)
+#                 y_data.append(label)
+#                 pose_sequences = []
+
+#     cap.release()
+#     return X_data, y_data
+
+# # -------------------------------
+# # TRAINING
+# # -------------------------------
+# def train_rnn_model(X: np.ndarray, y: np.ndarray, device: torch.device, epochs: int = 10, batch_size: int = 8, lr: float = 1e-3) -> FormRNN:
+#     model = FormRNN().to(device)
+#     criterion = nn.CrossEntropyLoss()
+#     optimizer = optim.Adam(model.parameters(), lr=lr)
+
+#     tensor_x = torch.tensor(X, dtype=torch.float32).to(device)
+#     tensor_y = torch.tensor(y, dtype=torch.long).to(device)
+#     dataset = TensorDataset(tensor_x, tensor_y)
+#     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+#     for epoch in range(epochs):
+#         model.train()
+#         total_loss = 0.0
+#         correct = 0
+#         total = 0
+
+#         for xb, yb in loader:
+#             optimizer.zero_grad()
+#             preds = model(xb)
+#             loss = criterion(preds, yb)
+#             loss.backward()
+#             optimizer.step()
+
+#             total_loss += loss.item()
+#             predicted = torch.argmax(preds, dim=1)
+#             correct += (predicted == yb).sum().item()
+#             total += yb.size(0)
+
+#         accuracy = correct / total
+#         print(f"Epoch {epoch+1}: Loss = {total_loss:.4f}, Accuracy = {accuracy:.2%}")
+
+#     return model
+
+# # -------------------------------
+# # DATA LOADING
+# # -------------------------------
+# def load_labeled_data_from_dir(data_dir: str, label: int) -> Tuple[List[np.ndarray], List[int]]:
+#     X_total, y_total = [], []
+
+#     for filename in os.listdir(data_dir):
+#         if filename.lower().endswith(".mp4"):
+#             video_path = os.path.join(data_dir, filename)
+#             print(f"📂 Processing: {video_path}")
+#             X_data, y_data = collect_pose_sequences_from_video(video_path, label=label)
+#             X_total.extend(X_data)
+#             y_total.extend(y_data)
+
+#     return X_total, y_total
+
+# # -------------------------------
+# # MAIN PIPELINE
+# # -------------------------------
+# def main(good_dir: str, bad_dir: str, use_gpu: bool = True):
+#     device = get_device(use_gpu)
+
+#     X_good, y_good = load_labeled_data_from_dir(good_dir, 1)
+#     X_bad, y_bad = load_labeled_data_from_dir(bad_dir, 0)
+
+#     X_total = X_good + X_bad
+#     y_total = y_good + y_bad
+
+#     if len(X_total) == 0:
+#         raise ValueError("❌ No training data found. Check your video paths or pose detection.")
+
+#     print(f"✅ Collected {len(X_total)} sequences for training.")
+
+#     np.save("X_data_pushup_angle.npy", np.array(X_total))
+#     np.save("y_data_pushup_angle.npy", np.array(y_total))
+
+#     model = train_rnn_model(np.array(X_total), np.array(y_total), device)
+#     torch.save(model.state_dict(), "form_rnn_pushup.pth")
+
+# if __name__ == "__main__":
+#     good_dir = "Videos/Push_Up/good_push_ups"
+#     bad_dir = "Videos/Push_Up/bad_push_ups"
+#     main(good_dir, bad_dir, use_gpu=True)
+
+
 # import mediapipe as mp
 # import numpy as np
 # import cv2
