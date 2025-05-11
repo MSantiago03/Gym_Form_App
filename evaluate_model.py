@@ -84,7 +84,9 @@ def evaluate_video(video_path: str, model_path: str = MODEL_PATH, label_map: dic
 if __name__ == "__main__":
     # Replace with your actual test video path
     test_video_path = "Videos/Push_Up/test_push_up/test_good_push_up.mp4"
-    test_model_path = "form_rnn_pushup_good.pth"
+    test_model_path = "form_rnn_pushup.pth"
     evaluate_video(test_video_path, test_model_path)
     test_video_path = "Videos/Push_Up/test_push_up/test_bad_push_up.mp4"
+    evaluate_video(test_video_path, test_model_path)
+    test_video_path = "Videos/Push_Up/squat_test.mp4"
     evaluate_video(test_video_path, test_model_path)
