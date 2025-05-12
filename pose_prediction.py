@@ -199,12 +199,12 @@ def main():
     device = get_device(use_gpu=True)
 
     # Push-up model
-    train_exercise_model(
-        exercise_name="pushup",
-        good_dir="Videos/Push_Up/good_push_ups",
-        bad_dir="Videos/Push_Up/bad_push_ups",
-        device=device
-    )
+    # train_exercise_model(
+    #     exercise_name="pushup",
+    #     good_dir="Videos/Push_Up/good_push_ups",
+    #     bad_dir="Videos/Push_Up/bad_push_ups",
+    #     device=device
+    # )
 
     # Squat model
     train_exercise_model(

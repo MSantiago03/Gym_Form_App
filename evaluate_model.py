@@ -55,7 +55,7 @@ def evaluate_video(video_path: str, model_path: str = MODEL_PATH, label_map: dic
         ret, frame = cap.read()
         if not ret:
             break
-
+        
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = pose.process(frame_rgb)
 
@@ -105,17 +105,29 @@ def evaluate_video(video_path: str, model_path: str = MODEL_PATH, label_map: dic
 # -------------------------------
 if __name__ == "__main__":
     # Replace with your actual test video path
-    test_video_path = "Videos/Push_Up/test_push_up/test_bad_push_up_2.mp4"
-    test_model_path = "form_rnn_pushup99.pth"
+    # test_video_path = "Videos/Push_Up/test_push_up/test_bad_push_up_2.mp4"
+    # test_model_path = "form_rnn_pushup_FINAL_VERSION.pth"
+    # evaluate_video(test_video_path, test_model_path)
+    # test_video_path = "Videos/Push_Up/test_push_up/test_push_up_bad_3.mp4"
+    # evaluate_video(test_video_path, test_model_path)
+    # test_video_path = "Videos/Push_Up/test_push_up/test_good_3.mp4"
+    # evaluate_video(test_video_path, test_model_path)
+    # test_video_path = "Videos/Push_Up/test_push_up/test_good_4.mp4"
+    # evaluate_video(test_video_path, test_model_path)
+    # test_video_path = "Videos/Push_Up/test_push_up/test_good_6.mp4"
+    # evaluate_video(test_video_path, test_model_path)
+
+
+    test_model_path = "form_rnn_squat.pth"
+    test_video_path = "Videos/Squat/test_squats/test_squat_good_1.mp4"
     evaluate_video(test_video_path, test_model_path)
-    test_video_path = "Videos/Push_Up/test_push_up/test_push_up_bad_3.mp4"
+    test_video_path = "Videos/Squat/test_squats/test_squat_good_2.mp4"
     evaluate_video(test_video_path, test_model_path)
-    test_video_path = "Videos/Push_Up/test_push_up/test_good_3.mp4"
+    test_video_path = "Videos/Squat/test_squats/test_squat_bad_1.mp4"
     evaluate_video(test_video_path, test_model_path)
-    test_video_path = "Videos/Push_Up/test_push_up/test_good_4.mp4"
+    test_video_path = "Videos/Squat/test_squats/test_squat_bad_2.mp4"
     evaluate_video(test_video_path, test_model_path)
-    test_video_path = "Videos/Push_Up/test_push_up/test_good_6.mp4"
-    evaluate_video(test_video_path, test_model_path)
+
 
 
 # import cv2
