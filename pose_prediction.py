@@ -187,7 +187,7 @@ def main(good_dir: str, bad_dir: str, use_gpu: bool = True):
     y_total = y_good + y_bad
 
     if len(X_total) == 0:
-        raise ValueError("❌ No training data found. Check your video paths or pose detection.")
+        raise ValueError("No training data found. Check your video paths or pose detection.")
 
     print(f"✅ Collected {len(X_total)} sequences for training.")
 
@@ -198,6 +198,25 @@ def main(good_dir: str, bad_dir: str, use_gpu: bool = True):
     print(f"📦 Saving model to: {os.path.abspath('form_rnn_pushup99.pth')}")
     torch.save(model.state_dict(), "form_rnn_pushup99.pth")
     print("✅ Training complete. Saving model...")
+
+
+    # Train a squat model using same pipeline
+    squat_good_dir = "Videos/Squat/good_squats"
+    squat_bad_dir = "Videos/Squat/bad_squats"
+
+    print("\n--- Training Squat Model ---")
+    device = get_device(use_gpu=True)
+    X_squat_good, y_squat_good = load_labeled_data_from_dir(squat_good_dir, 1)
+    X_squat_bad, y_squat_bad = load_labeled_data_from_dir(squat_bad_dir, 0)
+    X_squat = X_squat_good + X_squat_bad
+    y_squat = y_squat_good + y_squat_bad
+
+    if len(X_squat) == 0:
+        raise ValueError("No squat training data found.")
+
+    model_squat = train_rnn_model(np.array(X_squat), np.array(y_squat), device)
+    torch.save(model_squat.state_dict(), "form_rnn_squat99.pth")
+    print("Squat model saved as 'form_rnn_squat99.pth'")
 
 if __name__ == "__main__":
     # Example usage without parser
