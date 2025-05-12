@@ -196,7 +196,7 @@ def main(good_dir: str, bad_dir: str, use_gpu: bool = True):
 
     model = train_rnn_model(np.array(X_total), np.array(y_total), device)
     print(f"📦 Saving model to: {os.path.abspath('form_rnn_pushup99.pth')}")
-    torch.save(model.state_dict(), "form_rnn_pushup99.pth")
+    torch.save(model.state_dict(), "form_rnn_pushu.pth")
     print("✅ Training complete. Saving model...")
 
 
